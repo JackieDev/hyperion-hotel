@@ -1,0 +1,12 @@
+# Scala stuff
+*.class
+**/target/
+
+# IDE
+/.bsp
+/.idea
+*.iml
+.metals
+.bloop
+metals.sbt
+.vscode
