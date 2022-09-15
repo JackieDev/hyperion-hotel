@@ -6,4 +6,4 @@ CREATE TABLE IF NOT EXISTS bookings(
   added_on TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS all_bookings_idx ON bookings(room_id, start_date, added_on);
+CREATE INDEX IF NOT EXISTS all_bookings_idx ON bookings(room_id, start_date);

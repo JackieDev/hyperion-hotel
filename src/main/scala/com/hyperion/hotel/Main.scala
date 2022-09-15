@@ -1,12 +1,12 @@
 package com.hyperion.hotel
 
 import java.util.concurrent.Executors
-
 import cats.effect.{Blocker, ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, LiftIO, Resource, Timer}
 import cats.syntax.all._
 import com.hyperion.hotel.config.ServiceConfig
-import com.hyperion.hotel.database.{BookingsStore, SchemaMigration}
+import com.hyperion.hotel.database.{PostgresStore, SchemaMigration, Store}
 import com.hyperion.hotel.models.{Hotel, Room}
+import com.hyperion.hotel.routing.Routes
 import com.typesafe.scalalogging.Logger
 import doobie.free.connection.ConnectionIO
 import fs2.Stream
@@ -72,7 +72,7 @@ object Main extends IOApp {
       appExecutorService = Executors.newFixedThreadPool(8)
       appExecutionContext = ExecutionContext.fromExecutorService(appExecutorService)
       db <- Stream.resource(databaseResource(config))
-      httpService = ServiceRoutes.create(db)
+      httpService = Routes.routes(db)
       server <- runServer(httpService, config.hyperionHotel.httpd.host, config.hyperionHotel.httpd.port, appExecutionContext)
 
     } yield server

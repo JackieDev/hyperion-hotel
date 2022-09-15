@@ -1,7 +1,7 @@
 package com.hyperion.hotel.handlers
 
-import com.hyperion.hotel.database.BookingsStore
+import com.hyperion.hotel.database.Store
 
-class BookingHandler(bookingsDB: BookingsStore) {
+class BookingHandler[F[_], G[_]](bookingsDB: Store[F, G]) {
 
 }
