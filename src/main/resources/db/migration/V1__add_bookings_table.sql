@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS bookings(
-  room_id NUM NOT NULL,
+  room_id INT NOT NULL,
   customer_name VARCHAR NOT NULL,
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,

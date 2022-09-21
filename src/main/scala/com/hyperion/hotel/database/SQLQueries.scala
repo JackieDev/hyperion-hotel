@@ -2,19 +2,21 @@ package com.hyperion.hotel.database
 
 import cats.Show
 
-import java.time.Instant
+import java.time.{ZoneOffset, ZonedDateTime}
 import com.hyperion.hotel.models._
 import doobie._
 import doobie.implicits._
 import doobie.implicits.javasql.TimestampMeta
 import org.postgresql.util.PGobject
 
+import java.sql.Timestamp
+
 object SQLQueries {
 
   implicit val han: LogHandler = LogHandler.nop
 
-  implicit val instantMeta: Meta[Instant] =
-    TimestampMeta.imap(_.toInstant)(java.sql.Timestamp.from)
+  implicit val metaInstance: Meta[ZonedDateTime] = Meta[Timestamp]
+    .imap(ts => ZonedDateTime.ofInstant(ts.toInstant, ZoneOffset.UTC))(zdt => Timestamp.from(zdt.toInstant))
 
   implicit val pgObjectShow: Show[PGobject] = _.toString
 

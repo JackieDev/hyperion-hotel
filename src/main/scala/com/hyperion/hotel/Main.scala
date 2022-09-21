@@ -5,6 +5,7 @@ import cats.effect.{Blocker, ConcurrentEffect, ContextShift, ExitCode, IO, IOApp
 import cats.syntax.all._
 import com.hyperion.hotel.config.ServiceConfig
 import com.hyperion.hotel.database.{PostgresStore, SchemaMigration, Store}
+import com.hyperion.hotel.handlers.BookingHandler
 import com.hyperion.hotel.models.{Hotel, Room}
 import com.hyperion.hotel.routing.Routes
 import com.typesafe.scalalogging.Logger
@@ -72,14 +73,16 @@ object Main extends IOApp {
       appExecutorService = Executors.newFixedThreadPool(8)
       appExecutionContext = ExecutionContext.fromExecutorService(appExecutorService)
       db <- Stream.resource(databaseResource(config))
-      httpService = Routes.routes(db)
+      roomsAvailable = generateRooms
+      bookingHandler = new BookingHandler[IO, ConnectionIO](db, roomsAvailable)
+      httpService = new Routes[IO, ConnectionIO](db, bookingHandler).routes
       server <- runServer(httpService, config.hyperionHotel.httpd.host, config.hyperionHotel.httpd.port, appExecutionContext)
 
     } yield server
 
 
   override def run(args: List[String]): IO[ExitCode] = {
-    generateRooms
+
     stream.compile.drain.as(ExitCode.Success)
   }
 

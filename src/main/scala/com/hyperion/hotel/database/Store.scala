@@ -18,7 +18,7 @@ trait Store[F[_], G[_]] {
 
   def liftK: F ~> G
   def commit[A](f: G[A]): F[A]
-  def insertBooking(booking: Booking): G[Unit]
+  def insertBooking(booking: Booking): F[Boolean]
   def getBookings(roomId: Int): F[List[Booking]]
 
 }
@@ -26,22 +26,28 @@ trait Store[F[_], G[_]] {
 final class PostgresStore[F[_]: Sync](transactor: Transactor[F], val liftK: FunctionK[F, ConnectionIO])(implicit b: Bracket[F, Throwable])
   extends Store[F, ConnectionIO] {
 
-  private val cioUnit: ConnectionIO[Unit] = ().pure[ConnectionIO]
+  //private val cioUnit: ConnectionIO[Unit] = ().pure[ConnectionIO]
   val logger: Logger = Logger(getClass)
 
   override def commit[A](f: ConnectionIO[A]): F[A] = f.transact(transactor)
 
-  override def insertBooking(booking: Booking): ConnectionIO[Unit] =
-    SQLQueries.insertBooking(booking).run.attempt.flatMap {
-      case Right(_) => {
-        println(s"------------- insert booking returns Successful for roomId: ${booking.roomId}")
-        cioUnit
+  override def insertBooking(booking: Booking): F[Boolean] =
+    commit(SQLQueries.insertBooking(booking).run.attempt.flatMap {
+      case Right(rows) => {
+        rows match {
+          case 1 => println(s"-------Booking was successful for roomId: ${booking.roomId}")
+            true.pure[ConnectionIO]
+          case _ =>
+            println(s"-----------Booking was not successful for roomId: ${booking.roomId}")
+            false.pure[ConnectionIO]
+        }
       }
       case Left(e) => {
         println(s"------------- insert booking fails for for roomId: ${booking.roomId}, error: ${e.getMessage}")
         databaseError(s"Error when trying to insert booking into database, error: ${e.getMessage}", Some(e))
+        false.pure[ConnectionIO]
       }
-    }
+    })
 
   override def getBookings(roomId: Int): F[List[Booking]] =
     SQLQueries.getBookings(roomId).transact(transactor)
