@@ -25,22 +25,19 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
         case (GET | HEAD) -> Root / "ping" =>
           Ok("Pong!")
 
-        case GET -> Root / "bookings" / roomIdString => {
-          val dbResult = for {
+        case GET -> Root / "bookings" / roomIdString =>
+          for {
             roomId <- roomIdString.toInt.pure[F]
             resultUnit <- store.getBookings(roomId)
-          } yield resultUnit
+            res <- Ok(s"Bookings for roomId: $roomIdString: ${resultUnit.mkString_(" | ")}")
+          } yield res
 
-          Ok(s"Bookings for roomId: $roomIdString: $dbResult")
-        }
-
-
-        case req @ POST -> Root / "new-booking" => {
+        case req @ POST -> Root / "new-booking" =>
           req.as[Booking].flatMap { booking =>
             for {
               count <- bookingsHandler.processBooking(booking)
               res <- count match {
-                case false => NotFound()
+                case false => Ok(s"Booking for roomId: ${booking.roomId} was unsuccessful")
                 case true => Ok(s"Booking for roomId: ${booking.roomId} has been created")
               }
             } yield res
@@ -48,8 +45,6 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
             .handleErrorWith {
               case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
             }
-
-        }
 
       }
 
