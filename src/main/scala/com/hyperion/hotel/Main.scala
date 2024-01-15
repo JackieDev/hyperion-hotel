@@ -27,19 +27,29 @@ object Main extends IOApp {
   val theHotel: Hotel = Hotel("Hyperion Hotel, Los Angeles", 4, 17, List(angelsRoom))
   val totalRooms: Int = theHotel.roomsPerFloor * theHotel.floors
 
-  def generateRooms: List[Room] = {
-    def go(roomsSoFar: List[Room], currentRoomNumber: Int): List[Room] = {
-      if (currentRoomNumber < totalRooms && (roomsSoFar.exists(_.id != currentRoomNumber)))
-        go(roomsSoFar ++ List(Room(currentRoomNumber, false)), currentRoomNumber+1)
-      else if (currentRoomNumber == totalRooms && (roomsSoFar.exists(_.id != currentRoomNumber)))
-        roomsSoFar ++ List(Room(currentRoomNumber, false))
-      else if (currentRoomNumber < totalRooms || currentRoomNumber == totalRooms)
-        go(roomsSoFar, currentRoomNumber+1)
-      else
-        roomsSoFar
-    }
+  val firstFloor: List[Room] = (101 to 117).map(Room.createRoom).toList
+  val secondFloor: List[Room] = (201 to 217).map(Room.createRoom).toList
+  val thirdFloor: List[Room] = (301 to 317).map(Room.createRoom).toList
+  val fourthFloor: List[Room] = (401 to 417).map(Room.createRoom).toList
 
-    go(theHotel.offLimitRooms, 1)
+  def generateRooms: List[Room] = {
+//    def go(roomsSoFar: List[Room], currentRoomNumber: Int): List[Room] = {
+//      if (currentRoomNumber < totalRooms && (roomsSoFar.exists(_.id != currentRoomNumber)))
+//        go(roomsSoFar ++ List(Room(currentRoomNumber, false)), currentRoomNumber+1)
+//      else if (currentRoomNumber == totalRooms && (roomsSoFar.exists(_.id != currentRoomNumber)))
+//        roomsSoFar ++ List(Room(currentRoomNumber, false))
+//      else if (currentRoomNumber < totalRooms || currentRoomNumber == totalRooms)
+//        go(roomsSoFar, currentRoomNumber+1)
+//      else
+//        roomsSoFar
+//    }
+
+    //go(theHotel.offLimitRooms, 1)
+
+    (firstFloor ++
+      secondFloor ++
+      thirdFloor ++
+      fourthFloor).filterNot(room => (room.id == angelsRoom.id))
   }
 
   def databaseResource(config: ServiceConfig): Resource[IO, Store[IO, ConnectionIO]] =
@@ -73,8 +83,8 @@ object Main extends IOApp {
       appExecutorService = Executors.newFixedThreadPool(8)
       appExecutionContext = ExecutionContext.fromExecutorService(appExecutorService)
       db <- Stream.resource(databaseResource(config))
-      roomsAvailable = generateRooms
-      bookingHandler = new BookingHandler[IO, ConnectionIO](db, roomsAvailable)
+      generatedRooms = generateRooms
+      bookingHandler = new BookingHandler[IO, ConnectionIO](db, generatedRooms)
       httpService = new Routes[IO, ConnectionIO](db, bookingHandler).routes
       server <- runServer(httpService, config.hyperionHotel.httpd.host, config.hyperionHotel.httpd.port, appExecutionContext)
 

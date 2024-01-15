@@ -11,10 +11,19 @@ case class Booking(roomId: Int,
                    startDate: ZonedDateTime,
                    endDate: ZonedDateTime)
 
+case class JustDates(startDate: ZonedDateTime,
+                     endDate: ZonedDateTime
+                    )
+
 object Booking {
   implicit val decode: Decoder[Booking] = deriveDecoder[Booking]
   implicit val encode: Encoder[Booking] = deriveEncoder[Booking]
 
-  implicit val show: Show[Booking] = Show.show(b => s"This room is booked for: ${b.customerName} on ${b.startDate.toString}")
-//  implicit val showForList: Show[List[Booking]] = Show.catsShowForList
+  implicit val show: Show[Booking] =
+    Show.show(b => s"This room is booked for: ${b.customerName} from ${b.startDate.toString} until ${b.endDate.toString}")
+}
+
+object JustDates {
+  implicit val decodeDates: Decoder[JustDates] = deriveDecoder[JustDates]
+  implicit val encodeDates: Encoder[JustDates] = deriveEncoder[JustDates]
 }

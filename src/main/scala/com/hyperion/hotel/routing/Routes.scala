@@ -18,6 +18,7 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
   val routes: HttpRoutes[F] = {
 
     implicit def decodeBooking: EntityDecoder[F, Booking] = jsonOf[F, Booking]
+    implicit def decodeDates: EntityDecoder[F, JustDates] = jsonOf[F, JustDates]
 
     HttpRoutes
       .of[F] {
@@ -28,8 +29,17 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
         case GET -> Root / "bookings" / roomIdString =>
           for {
             roomId <- roomIdString.toInt.pure[F]
-            resultUnit <- store.getBookings(roomId)
-            res <- Ok(s"Bookings for roomId: $roomIdString: ${resultUnit.mkString_(" | ")}")
+            bookings <- store.getBookings(roomId)
+            res <- Ok(s"Bookings for roomId: $roomIdString: ${bookings.mkString_("\n")}")
+          } yield res
+
+        case GET -> Root / "bookings-for" / customerName =>
+          for {
+            bookings <- store.getAllBookingsForCustomer(customerName)
+            res <- bookings match {
+              case Nil => Ok(s"We don't currently have any bookings for $customerName")
+              case list => Ok(s"We have the following bookings for $customerName: ${list.mkString_("\n")}")
+            }
           } yield res
 
         case req @ POST -> Root / "new-booking" =>
@@ -46,8 +56,34 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
               case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
             }
 
-      }
+        case req @ POST -> Root / "cancel-booking" =>
+          req.as[Booking].flatMap { booking =>
+            for {
+              result <- bookingsHandler.cancelBooking(booking)
+              response <- result match {
+                case false => Ok(s"Booking for ${booking.customerName} starting on the: ${booking.startDate} was unsuccessfully cancelled")
+                case true => Ok(s"Booking for ${booking.customerName} starting on the: ${booking.startDate} has been cancelled as requested")
+              }
+            } yield response
+          }
+            .handleErrorWith {
+              case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
+            }
 
+        case req @ POST -> Root / "available-rooms" =>
+          req.as[JustDates].flatMap { dates =>
+            for {
+              rooms <- bookingsHandler.getAllAvailableRooms(dates.startDate, dates.endDate)
+              res <- Ok(s"The following rooms are available from ${dates.startDate} to ${dates.endDate}: $rooms")
+            } yield res
+          }
+
+        case GET -> Root / "remove-expired" =>
+          for {
+            result <- store.removeExpired()
+            response <- Ok(result)
+          } yield response
+      }
 
 
   }
