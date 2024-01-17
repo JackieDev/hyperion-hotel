@@ -22,8 +22,8 @@ object SQLQueries {
 
   def insertBooking(booking: Booking): Update0 =
     sql"""
-         | insert into bookings (room_id, customer_name, start_date, end_date, added_on) values (${booking.roomId},
-         | ${booking.customerName}, ${booking.startDate}, ${booking.endDate}, now())
+         | insert into bookings (room_id, customer_name, start_date, end_date, total_price, added_on) values (${booking.roomId},
+         | ${booking.customerName}, ${booking.startDate}, ${booking.endDate}, ${booking.totalPrice}, now())
          | on conflict (room_id, start_date)
          | do nothing""".stripMargin
       .update
@@ -38,7 +38,7 @@ object SQLQueries {
 
   def getBookings(roomId: Int): ConnectionIO[List[Booking]] =
     sql"""
-         | select room_id, customer_name, start_date, end_date from bookings where
+         | select room_id, customer_name, start_date, end_date, total_price from bookings where
          | room_id=$roomId""".stripMargin
       .query[Booking].to[List]
 
@@ -55,7 +55,7 @@ object SQLQueries {
 
   def getAllBookingsForCustomer(name: String): ConnectionIO[List[Booking]] =
     sql"""
-         | select room_id, customer_name, start_date, end_date from bookings where
+         | select room_id, customer_name, start_date, end_date, total_price from bookings where
          | customer_name=$name""".stripMargin
       .query[Booking].to[List]
 

@@ -9,7 +9,8 @@ import java.time.ZonedDateTime
 case class Booking(roomId: Int,
                    customerName: String,
                    startDate: ZonedDateTime,
-                   endDate: ZonedDateTime)
+                   endDate: ZonedDateTime,
+                   totalPrice: Double)
 
 case class JustDates(startDate: ZonedDateTime,
                      endDate: ZonedDateTime

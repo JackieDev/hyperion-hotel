@@ -6,7 +6,7 @@ import cats.syntax.all._
 import com.hyperion.hotel.config.ServiceConfig
 import com.hyperion.hotel.database.{PostgresStore, SchemaMigration, Store}
 import com.hyperion.hotel.handlers.BookingHandler
-import com.hyperion.hotel.models.{Hotel, Room}
+import com.hyperion.hotel.models.{Hotel, Room, Suite}
 import com.hyperion.hotel.routing.Routes
 import com.typesafe.scalalogging.Logger
 import doobie.free.connection.ConnectionIO
@@ -23,14 +23,14 @@ object Main extends IOApp {
 
   val logger: Logger = Logger(getClass)
 
-  val angelsRoom: Room = Room(217, true)
+  val angelsRoom: Room = Room(217, true, Suite)
   val theHotel: Hotel = Hotel("Hyperion Hotel, Los Angeles", 4, 17, List(angelsRoom))
   val totalRooms: Int = theHotel.roomsPerFloor * theHotel.floors
 
-  val firstFloor: List[Room] = (101 to 117).map(Room.createRoom).toList
-  val secondFloor: List[Room] = (201 to 217).map(Room.createRoom).toList
-  val thirdFloor: List[Room] = (301 to 317).map(Room.createRoom).toList
-  val fourthFloor: List[Room] = (401 to 417).map(Room.createRoom).toList
+  val firstFloor: List[Room] = (101 to 117).map(Room.createStandardRoom).toList
+  val secondFloor: List[Room] = (201 to 217).map(Room.createDeluxeRoom).toList
+  val thirdFloor: List[Room] = (301 to 317).map(Room.createStandardRoom).toList
+  val fourthFloor: List[Room] = (401 to 417).map(Room.createSuiteRoom).toList
 
   def generateRooms: List[Room] = {
 //    def go(roomsSoFar: List[Room], currentRoomNumber: Int): List[Room] = {
