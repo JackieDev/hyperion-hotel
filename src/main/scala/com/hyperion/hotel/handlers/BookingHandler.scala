@@ -3,7 +3,7 @@ package com.hyperion.hotel.handlers
 import cats.Monad
 import cats.implicits._
 import com.hyperion.hotel.database.Store
-import com.hyperion.hotel.models.{Booking, Room, RoomType}
+import com.hyperion.hotel.models.{Booking, Room}
 
 import java.time.ZonedDateTime
 
@@ -68,5 +68,10 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
       case None => booking.totalPrice
     }
   }
+
+  // TODO
+  // What's next?
+  // Create deals for special occasions such as Valetines, Bank Hols, Summer 5 day deals, etc
+  // new case class or add to Booking model?
 
 }
