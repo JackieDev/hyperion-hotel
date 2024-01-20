@@ -3,7 +3,7 @@ package com.hyperion.hotel.handlers
 import cats.Monad
 import cats.implicits._
 import com.hyperion.hotel.database.Store
-import com.hyperion.hotel.models.{Booking, Room}
+import com.hyperion.hotel.models.{Booking, Room, SpecialDeal}
 
 import java.time.ZonedDateTime
 
@@ -43,6 +43,26 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
     }
   }
 
+  def processSpecialDealBooking(booking: Booking, specialDealId: String): F[Boolean] = {
+    getAllAvailableRooms(booking.startDate, booking.endDate).flatMap {
+      availableRooms =>
+        println(s"---------- availableRooms: ${availableRooms.map(_.id)}")
+        if (availableRooms.exists(r => (r.id == booking.roomId) && !r.offLimits)) {
+          // is special deal available for this booking?
+          if (SpecialDeal.specialBookingValidator(specialDealId, booking)) {
+            val specialPrice = calculateTotalPrice(booking) * (1 - SpecialDeal.getDiscountRate(specialDealId))
+            bookingsDB.insertBooking(booking.copy(totalPrice = specialPrice))
+          } else {
+            println(s"--- Sorry, this special was not available to book for the details you've chosen")
+            false.pure[F]
+          }
+        } else {
+          println(s"--- Sorry, roomId: ${booking.roomId} is not available to book for the dates you've chosen")
+          false.pure[F]
+        }
+    }
+  }
+
   def cancelBooking(booking: Booking): F[Boolean] = {
     for {
       // check booking exists
@@ -68,10 +88,5 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
       case None => booking.totalPrice
     }
   }
-
-  // TODO
-  // What's next?
-  // Create deals for special occasions such as Valetines, Bank Hols, Summer 5 day deals, etc
-  // new case class or add to Booking model?
 
 }

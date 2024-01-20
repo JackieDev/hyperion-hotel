@@ -48,7 +48,21 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
               count <- bookingsHandler.processBooking(booking)
               res <- count match {
                 case false => Ok(s"Booking for roomId: ${booking.roomId} was unsuccessful")
-                case true => Ok(s"Booking for roomId: ${booking.roomId} has been created")
+                case true => Ok(s"Booking for roomId: ${booking.roomId} was successful")
+              }
+            } yield res
+          }
+            .handleErrorWith {
+              case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
+            }
+
+        case req @ POST -> Root / "special-deal-booking" / specialId =>
+          req.as[Booking].flatMap { booking =>
+            for {
+              count <- bookingsHandler.processSpecialDealBooking(booking, specialId)
+              res <- count match {
+                case false => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was unsuccessful")
+                case true => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was successful")
               }
             } yield res
           }

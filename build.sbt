@@ -33,5 +33,6 @@ libraryDependencies ++= Seq(
   "org.postgresql"         %  "postgresql"           % postgresql,
   "com.github.pureconfig"  %% "pureconfig"           % pureConfig,
   "com.typesafe.scala-logging" %% "scala-logging"    % "3.9.3",
-  "com.lihaoyi"            %% "sourcecode"           % "0.2.5"
+  "com.lihaoyi"            %% "sourcecode"           % "0.2.5",
+  "org.scalatest"          %% "scalatest"            % "3.2.17" % "test"
 )

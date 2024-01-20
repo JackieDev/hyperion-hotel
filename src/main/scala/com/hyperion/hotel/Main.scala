@@ -54,7 +54,7 @@ object Main extends IOApp {
 
   def databaseResource(config: ServiceConfig): Resource[IO, Store[IO, ConnectionIO]] =
     for {
-      _ <- Resource.eval(logger.info("-------------- Loading hyperion-hotel database...").pure[IO])
+      _ <- Resource.eval(logger.info("------- Loading hyperion-hotel database...").pure[IO])
       _ <- Resource.eval(SchemaMigration[IO](config.hyperionHotel.db))
       block <- Blocker[IO]
       dbES = Executors.newFixedThreadPool(config.hyperionHotel.db.maxConnectionPoolSize)

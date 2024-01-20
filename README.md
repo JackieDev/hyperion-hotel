@@ -10,10 +10,53 @@ GET bookings/roomId
 
 GET bookings-for/customerName
 
-POST new-booking (supply booking details)
-
-POST cancel-booking (supply booking details)
-
-POST available-rooms (supply dates)
-
 GET remove-expired (bookings)
+
+POST new-booking (supply booking details in the body)
+```
+{
+    "roomId":"411",
+    "customerName":"AJ",
+    "startDate":"2024-02-11T15:00:00Z",
+    "endDate":"2024-02-15T12:00:00Z",
+    "totalPrice": 0.00
+}
+```
+
+POST cancel-booking (supply booking details in the body)
+```
+{
+    "roomId":"411",
+    "customerName":"AJ",
+    "startDate":"2024-02-11T15:00:00Z",
+    "endDate":"2024-02-15T12:00:00Z",
+    "totalPrice": 0.00
+}
+```
+
+POST available-rooms (supply dates in the body)
+```
+{
+    "startDate":"2024-02-11T15:00:00Z",
+    "endDate":"2024-02-15T12:00:00Z",
+}
+```
+
+POST special-deal-booking / specialId (supply booking details in the body)
+```
+{
+    "roomId":"411",
+    "customerName":"AJ",
+    "startDate":"2024-02-11T15:00:00Z",
+    "endDate":"2024-02-15T12:00:00Z",
+    "totalPrice": 0.00
+}
+```
+
+Current special deal Ids available:
+```
+VALENTINES - for valentines offer
+MAYBH - for May Bank Holiday offer
+JJ - for Jolly July offer
+DEC - for all of December offer
+```
