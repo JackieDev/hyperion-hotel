@@ -28,7 +28,7 @@ object SQLQueries {
          | do nothing""".stripMargin
       .update
 
-  def cancelBooking(booking: Booking): Update0 =
+  def cancelBooking(booking: BookingReceived): Update0 =
     sql"""
          | delete from bookings where room_id=${booking.roomId} AND
          | customer_name=${booking.customerName} AND
@@ -59,7 +59,7 @@ object SQLQueries {
          | customer_name=$name""".stripMargin
       .query[Booking].to[List]
 
-  def checkBookingExists(booking: Booking): ConnectionIO[List[Booking]] =
+  def checkBookingExists(booking: BookingReceived): ConnectionIO[List[Booking]] =
     sql"""
          | select * from bookings where room_id=${booking.roomId} AND
          | customer_name=${booking.customerName} AND

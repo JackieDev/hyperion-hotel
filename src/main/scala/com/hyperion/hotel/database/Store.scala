@@ -19,13 +19,13 @@ trait Store[F[_], G[_]] {
 
   def liftK: F ~> G
   def commit[A](f: G[A]): F[A]
-  def insertBooking(booking: Booking): F[Boolean]
+  def insertBooking(booking: Booking): F[BookingResult]
   def getBookings(roomId: Int): F[List[Booking]]
   def getAllBookingsForDates(startDate: ZonedDateTime,
                              endDate: ZonedDateTime): F[List[Int]]
   def getAllBookingsForCustomer(name: String): F[List[Booking]]
-  def checkBookingExists(booking: Booking): F[Boolean]
-  def cancelBooking(booking: Booking): F[Boolean]
+  def checkBookingExists(booking: BookingReceived): F[Boolean]
+  def cancelBooking(booking: BookingReceived): F[Boolean]
   def removeExpired(): F[String]
 
 }
@@ -38,21 +38,18 @@ final class PostgresStore[F[_]: Sync](transactor: Transactor[F], val liftK: Func
 
   override def commit[A](f: ConnectionIO[A]): F[A] = f.transact(transactor)
 
-  override def insertBooking(booking: Booking): F[Boolean] =
-    commit(SQLQueries.insertBooking(booking).run.attempt.flatMap {
+  override def insertBooking(booking: Booking): F[BookingResult] =
+    commit(SQLQueries.insertBooking(booking).run.attempt.map {
       case Right(rows) => {
         rows match {
-          case 1 => println(s"-------Booking was successful for roomId: ${booking.roomId}")
-            true.pure[ConnectionIO]
+          case 1 =>
+            SuccessfulBooking
           case _ =>
-            println(s"-----------Booking was not successful for roomId: ${booking.roomId}")
-            false.pure[ConnectionIO]
+            FailedBooking(List(s"Booking was not successful for roomId: ${booking.roomId}"))
         }
       }
       case Left(e) => {
-        println(s"------------- insert booking fails for for roomId: ${booking.roomId}, error: ${e.getMessage}")
-        databaseError(s"Error when trying to insert booking into database, error: ${e.getMessage}", Some(e))
-        false.pure[ConnectionIO]
+        FailedBooking(List(s"Inserting booking failed for roomId: ${booking.roomId}, error: ${e.getMessage}"))
       }
     })
 
@@ -65,10 +62,10 @@ final class PostgresStore[F[_]: Sync](transactor: Transactor[F], val liftK: Func
   override def getAllBookingsForCustomer(name: String): F[List[Booking]] =
     SQLQueries.getAllBookingsForCustomer(name).transact(transactor)
 
-  override def checkBookingExists(booking: Booking): F[Boolean] =
+  override def checkBookingExists(booking: BookingReceived): F[Boolean] =
     SQLQueries.checkBookingExists(booking).transact(transactor).map(_.nonEmpty)
 
-  override def cancelBooking(booking: Booking): F[Boolean] =
+  override def cancelBooking(booking: BookingReceived): F[Boolean] =
     commit(SQLQueries.cancelBooking(booking).run.attempt.flatMap {
       case Right(rows) => {
         rows match {

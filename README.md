@@ -18,8 +18,7 @@ POST new-booking (supply booking details in the body)
     "roomId":"411",
     "customerName":"AJ",
     "startDate":"2024-02-11T15:00:00Z",
-    "endDate":"2024-02-15T12:00:00Z",
-    "totalPrice": 0.00
+    "endDate":"2024-02-15T12:00:00Z"
 }
 ```
 
@@ -29,8 +28,7 @@ POST cancel-booking (supply booking details in the body)
     "roomId":"411",
     "customerName":"AJ",
     "startDate":"2024-02-11T15:00:00Z",
-    "endDate":"2024-02-15T12:00:00Z",
-    "totalPrice": 0.00
+    "endDate":"2024-02-15T12:00:00Z"
 }
 ```
 
@@ -48,8 +46,7 @@ POST special-deal-booking / specialId (supply booking details in the body)
     "roomId":"411",
     "customerName":"AJ",
     "startDate":"2024-02-11T15:00:00Z",
-    "endDate":"2024-02-15T12:00:00Z",
-    "totalPrice": 0.00
+    "endDate":"2024-02-15T12:00:00Z"
 }
 ```
 

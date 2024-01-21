@@ -49,7 +49,7 @@ object SpecialDeal {
     }.filter(_.getDayOfWeek == MONDAY).head
   }
 
-  def specialBookingValidator(specialDealId: String, booking: Booking): Boolean = {
+  def specialBookingValidator(specialDealId: String, booking: BookingReceived): Boolean = {
     specialDealId match {
       case "VALENTINES" => booking.startDate.toLocalDate.getDayOfMonth == 14 &
        booking.startDate.toLocalDate.getMonth == FEBRUARY &

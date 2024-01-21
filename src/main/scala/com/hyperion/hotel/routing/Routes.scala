@@ -17,7 +17,7 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
 
   val routes: HttpRoutes[F] = {
 
-    implicit def decodeBooking: EntityDecoder[F, Booking] = jsonOf[F, Booking]
+    implicit def decodeBooking: EntityDecoder[F, BookingReceived] = jsonOf[F, BookingReceived]
     implicit def decodeDates: EntityDecoder[F, JustDates] = jsonOf[F, JustDates]
 
     HttpRoutes
@@ -30,7 +30,10 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
           for {
             roomId <- roomIdString.toInt.pure[F]
             bookings <- store.getBookings(roomId)
-            res <- Ok(s"Bookings for roomId: $roomIdString: ${bookings.mkString_("\n")}")
+            res <- bookings match {
+              case Nil => Ok(s"There are currently no bookings for room: $roomIdString")
+              case _ => Ok(s"Bookings for roomId: $roomIdString: ${bookings.mkString_("\n")}")
+            }
           } yield res
 
         case GET -> Root / "bookings-for" / customerName =>
@@ -43,12 +46,12 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
           } yield res
 
         case req @ POST -> Root / "new-booking" =>
-          req.as[Booking].flatMap { booking =>
+          req.as[BookingReceived].flatMap { booking =>
             for {
               count <- bookingsHandler.processBooking(booking)
               res <- count match {
-                case false => Ok(s"Booking for roomId: ${booking.roomId} was unsuccessful")
-                case true => Ok(s"Booking for roomId: ${booking.roomId} was successful")
+                case FailedBooking(details) => Ok(s"Booking for roomId: ${booking.roomId} was unsuccessful, details: $details")
+                case SuccessfulBooking => Ok(s"Booking for roomId: ${booking.roomId} was successful")
               }
             } yield res
           }
@@ -57,12 +60,12 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
             }
 
         case req @ POST -> Root / "special-deal-booking" / specialId =>
-          req.as[Booking].flatMap { booking =>
+          req.as[BookingReceived].flatMap { booking =>
             for {
               count <- bookingsHandler.processSpecialDealBooking(booking, specialId)
               res <- count match {
-                case false => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was unsuccessful")
-                case true => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was successful")
+                case FailedBooking(details) => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was unsuccessful, details: $details")
+                case SuccessfulBooking => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was successful")
               }
             } yield res
           }
@@ -71,7 +74,7 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
             }
 
         case req @ POST -> Root / "cancel-booking" =>
-          req.as[Booking].flatMap { booking =>
+          req.as[BookingReceived].flatMap { booking =>
             for {
               result <- bookingsHandler.cancelBooking(booking)
               response <- result match {
