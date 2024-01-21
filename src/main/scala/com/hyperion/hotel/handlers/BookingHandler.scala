@@ -3,7 +3,7 @@ package com.hyperion.hotel.handlers
 import cats.Monad
 import cats.implicits._
 import com.hyperion.hotel.database.Store
-import com.hyperion.hotel.models.{Booking, BookingReceived, BookingResult, FailedBooking, Room, RoomType, SpecialDeal}
+import com.hyperion.hotel.models.{Booking, BookingForRoomType, BookingReceived, BookingResult, FailedBooking, Room, SpecialDeal}
 
 import java.time.ZonedDateTime
 
@@ -32,7 +32,6 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
   def processBooking(booking: BookingReceived): F[BookingResult] = {
     getAllAvailableRooms(booking.startDate, booking.endDate).flatMap {
       availableRooms =>
-        println(s"---------- availableRooms: ${availableRooms.map(_.id)}")
         if (availableRooms.exists(r => (r.id == booking.roomId) && !r.offLimits)) {
           val calculatedPrice = calculateTotalPrice(booking)
           bookingsDB.insertBooking(Booking.bookingReceivedToBooking(booking, calculatedPrice))
@@ -45,7 +44,6 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
   def processSpecialDealBooking(booking: BookingReceived, specialDealId: String): F[BookingResult] = {
     getAllAvailableRooms(booking.startDate, booking.endDate).flatMap {
       availableRooms =>
-        println(s"---------- availableRooms: ${availableRooms.map(_.id)}")
         if (availableRooms.exists(r => (r.id == booking.roomId) && !r.offLimits)) {
           // is special deal available for this booking?
           if (SpecialDeal.specialBookingValidator(specialDealId, booking)) {
@@ -88,19 +86,21 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
 
   def getNextAvailableRoomByType(startDate: ZonedDateTime,
                                  endDate: ZonedDateTime,
-                                 roomType: RoomType): F[Option[Room]] = {
+                                 roomType: String): F[Option[Room]] = {
     for {
       rooms <- getAllAvailableRooms(startDate, endDate)
-      roomsOfType = rooms.filter(_.roomType == roomType)
+      roomsOfType = rooms.filter(_.roomType.name == roomType)
     } yield roomsOfType.headOption
   }
 
-  //TODO
-  /*
-    - functionality to auto book the next available room for the given dates + room type
-    - new case class to POST dates + roomType
-    - steps to calculate next available room - done
-    - getAllAvailableRooms then filter by roomType - done
-   */
+  def bookNextAvailableRoomByType(booking: BookingForRoomType): F[BookingResult] = {
+    for {
+      maybeRoom <- getNextAvailableRoomByType(booking.startDate, booking.endDate, booking.roomType)
+      booking <- maybeRoom match {
+        case Some(room) => processBooking(BookingReceived(room.id, booking.customerName, booking.startDate, booking.endDate))
+        case None => FailedBooking(List(s"Sorry ${booking.customerName}, there are no rooms left of type: ${booking.roomType} for the dates you've given.")).pure[F]
+      }
+    } yield booking
+  }
 
 }

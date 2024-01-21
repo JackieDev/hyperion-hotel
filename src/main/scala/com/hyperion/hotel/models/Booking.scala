@@ -22,6 +22,11 @@ case class BookingReceived(roomId: Int,
                            endDate: ZonedDateTime
                           )
 
+case class BookingForRoomType(customerName: String,
+                              startDate: ZonedDateTime,
+                              endDate: ZonedDateTime,
+                              roomType: String)
+
 object Booking {
   implicit val decode: Decoder[Booking] = deriveDecoder[Booking]
   implicit val encode: Encoder[Booking] = deriveEncoder[Booking]
@@ -46,4 +51,9 @@ object JustDates {
 object BookingReceived {
   implicit val decode: Decoder[BookingReceived] = deriveDecoder[BookingReceived]
   implicit val encode: Encoder[BookingReceived] = deriveEncoder[BookingReceived]
+}
+
+object BookingForRoomType {
+  implicit val decode: Decoder[BookingForRoomType] = deriveDecoder[BookingForRoomType]
+  implicit val encode: Encoder[BookingForRoomType] = deriveEncoder[BookingForRoomType]
 }

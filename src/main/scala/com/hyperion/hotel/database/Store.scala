@@ -43,7 +43,7 @@ final class PostgresStore[F[_]: Sync](transactor: Transactor[F], val liftK: Func
       case Right(rows) => {
         rows match {
           case 1 =>
-            SuccessfulBooking
+            SuccessfulBookingMade(booking.roomId)
           case _ =>
             FailedBooking(List(s"Booking was not successful for roomId: ${booking.roomId}"))
         }

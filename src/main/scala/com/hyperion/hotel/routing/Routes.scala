@@ -18,6 +18,7 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
   val routes: HttpRoutes[F] = {
 
     implicit def decodeBooking: EntityDecoder[F, BookingReceived] = jsonOf[F, BookingReceived]
+    implicit def decodeBookingForRoomType: EntityDecoder[F, BookingForRoomType] = jsonOf[F, BookingForRoomType]
     implicit def decodeDates: EntityDecoder[F, JustDates] = jsonOf[F, JustDates]
 
     HttpRoutes
@@ -48,12 +49,13 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
         case req @ POST -> Root / "new-booking" =>
           req.as[BookingReceived].flatMap { booking =>
             for {
-              count <- bookingsHandler.processBooking(booking)
-              res <- count match {
+              result <- bookingsHandler.processBooking(booking)
+              response <- result match {
                 case FailedBooking(details) => Ok(s"Booking for roomId: ${booking.roomId} was unsuccessful, details: $details")
                 case SuccessfulBooking => Ok(s"Booking for roomId: ${booking.roomId} was successful")
+                case _ => BadRequest()
               }
-            } yield res
+            } yield response
           }
             .handleErrorWith {
               case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
@@ -62,12 +64,28 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
         case req @ POST -> Root / "special-deal-booking" / specialId =>
           req.as[BookingReceived].flatMap { booking =>
             for {
-              count <- bookingsHandler.processSpecialDealBooking(booking, specialId)
-              res <- count match {
+              result <- bookingsHandler.processSpecialDealBooking(booking, specialId)
+              response <- result match {
                 case FailedBooking(details) => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was unsuccessful, details: $details")
                 case SuccessfulBooking => Ok(s"Special Booking for $specialId roomId: ${booking.roomId} was successful")
+                case _ => BadRequest()
               }
-            } yield res
+            } yield response
+          }
+            .handleErrorWith {
+              case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
+            }
+
+        case req @ POST -> Root / "booking-by-room-type" =>
+          req.as[BookingForRoomType].flatMap { booking =>
+            for {
+              result <- bookingsHandler.bookNextAvailableRoomByType(booking)
+              response <- result match {
+                case FailedBooking(details) => Ok(s"Booking was unsuccessful, details: $details")
+                case SuccessfulBookingMade(roomId) => Ok(s"Booking was successful for ${booking.customerName}, you will be staying in room: $roomId")
+                case SuccessfulBooking => Ok(s"Booking was successful for ${booking.customerName}")
+              }
+            } yield response
           }
             .handleErrorWith {
               case InvalidMessageBodyFailure(dets, _) => BadRequest(s"Error details: $dets")
