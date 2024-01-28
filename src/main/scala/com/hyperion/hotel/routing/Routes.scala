@@ -120,7 +120,6 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
           } yield response
       }
 
-
   }
 
 }

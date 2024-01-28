@@ -5,7 +5,7 @@ import cats.implicits._
 import com.hyperion.hotel.database.Store
 import com.hyperion.hotel.models.{Booking, BookingForRoomType, BookingReceived, BookingResult, FailedBooking, Room, SpecialDeal}
 
-import java.time.ZonedDateTime
+import java.time.{LocalDate, ZonedDateTime}
 
 class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms: List[Room]) {
 
@@ -29,14 +29,28 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
     bookingsDB.getAllBookingsForDates(startDate, endDate).map(removeBookedRooms)
   }
 
+  private def validateDates(startDate: LocalDate, endDate: LocalDate): Option[String] = {
+    if (startDate.isBefore(LocalDate.now()) || endDate.isBefore(LocalDate.now()))
+      Some("Invalid dates, at least one of these dates is in the past")
+    else if (startDate.isAfter(endDate))
+      Some("Invalid dates, start date is after the end date")
+    else
+      None
+  }
+
   def processBooking(booking: BookingReceived): F[BookingResult] = {
-    getAllAvailableRooms(booking.startDate, booking.endDate).flatMap {
-      availableRooms =>
-        if (availableRooms.exists(r => (r.id == booking.roomId) && !r.offLimits)) {
-          val calculatedPrice = calculateTotalPrice(booking)
-          bookingsDB.insertBooking(Booking.bookingReceivedToBooking(booking, calculatedPrice))
-        } else {
-          FailedBooking(List(s"Sorry, roomId: ${booking.roomId} is not available to book for the dates you've given")).pure[F].widen
+    validateDates(booking.startDate.toLocalDate, booking.endDate.toLocalDate) match {
+      case Some(invalidDates) =>
+        FailedBooking(List(invalidDates)).pure[F].widen
+      case None => // all good, no date errors to report
+        getAllAvailableRooms(booking.startDate, booking.endDate).flatMap {
+          availableRooms =>
+            if (availableRooms.exists(r => (r.id == booking.roomId) && !r.offLimits)) {
+              val calculatedPrice = calculateTotalPrice(booking)
+              bookingsDB.insertBooking(Booking.bookingReceivedToBooking(booking, calculatedPrice))
+            } else {
+              FailedBooking(List(s"Sorry, roomId: ${booking.roomId} is not available to book for the dates you've given")).pure[F].widen
+            }
         }
     }
   }
