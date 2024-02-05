@@ -1,16 +1,18 @@
 package com.hyperion.hotel
 
 import java.util.concurrent.Executors
-import cats.effect.{Blocker, ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, LiftIO, Resource, Timer}
+import cats.effect._
 import cats.syntax.all._
 import com.hyperion.hotel.config.ServiceConfig
 import com.hyperion.hotel.database.{PostgresStore, SchemaMigration, Store}
-import com.hyperion.hotel.handlers.BookingHandler
-import com.hyperion.hotel.models.{Hotel, Room, Suite}
-import com.hyperion.hotel.routing.Routes
+import com.hyperion.hotel.handlers.{BookingHandler, SpecialDealHandler}
+import com.hyperion.hotel.models.{Hotel, Room, SpecialDeal, Suite}
+import com.hyperion.hotel.producers.SpecialDealProducer
+import com.hyperion.hotel.routing.{AdminRoutes, Routes}
 import com.typesafe.scalalogging.Logger
 import doobie.free.connection.ConnectionIO
 import fs2.Stream
+import fs2.kafka.KafkaProducer
 import org.http4s.HttpRoutes
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
@@ -20,6 +22,7 @@ import scala.concurrent.ExecutionContext
 object Main extends IOApp {
 
   implicit val concurrentEffect: ConcurrentEffect[IO] = IO.ioConcurrentEffect
+  implicit val ec = scala.concurrent.ExecutionContext.global
 
   val logger: Logger = Logger(getClass)
 
@@ -62,6 +65,7 @@ object Main extends IOApp {
       db <- PostgresStore.resource(config.hyperionHotel.db, dbEC, block, LiftIO.liftK[ConnectionIO])
     } yield db
 
+
   private def runServer(service: HttpRoutes[IO], host: String, port: Int, ec: ExecutionContext)(
     implicit timer: Timer[IO],
     cs: ContextShift[IO]
@@ -72,7 +76,8 @@ object Main extends IOApp {
       .serve
 
 
-  def stream: Stream[IO, ExitCode] =
+  def runStream(kafkaProducer: KafkaProducer[IO, String, SpecialDeal])(implicit timer: Timer[IO],
+                                                                       ec: ExecutionContext): Stream[IO, ExitCode] =
     for {
       configs <- Stream.eval(ServiceConfig.loadApplicationConfig.onError {
         case err => logger.error(s"Hyperion hotel service is unable to load config, aborting. Failed with error: $err").pure[IO]
@@ -85,15 +90,35 @@ object Main extends IOApp {
       db <- Stream.resource(databaseResource(config))
       generatedRooms = generateRooms
       bookingHandler = new BookingHandler[IO, ConnectionIO](db, generatedRooms)
+
+      publishKafkaMessage = (key: String, msg: SpecialDeal) =>
+        SpecialDealProducer.sendMessage(key, msg, kafkaProducer)
+
+      specialsHandler = new SpecialDealHandler[IO](publishKafkaMessage)
+      adminRoutes = new AdminRoutes[IO](specialsHandler)
+
       httpService = new Routes[IO, ConnectionIO](db, bookingHandler).routes
+        .combineK(adminRoutes.routes)
+
       server <- runServer(httpService, config.hyperionHotel.httpd.host, config.hyperionHotel.httpd.port, appExecutionContext)
 
     } yield server
 
 
-  override def run(args: List[String]): IO[ExitCode] = {
-
-    stream.compile.drain.as(ExitCode.Success)
+  def createKafkaProducer: Stream[IO, KafkaProducer[IO, String, SpecialDeal]] = {
+    for {
+      producer <- SpecialDealProducer[IO]()
+    } yield producer
   }
+
+  def stream: Stream[IO, ExitCode] =
+    for {
+      kafkaProducer <- createKafkaProducer
+      server <- runStream(kafkaProducer)
+    } yield server
+
+
+  override def run(args: List[String]): IO[ExitCode] =
+    stream.compile.drain.as(ExitCode.Success)
 
 }

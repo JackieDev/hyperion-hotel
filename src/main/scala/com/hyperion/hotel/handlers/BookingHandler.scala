@@ -117,4 +117,6 @@ class BookingHandler[F[_]: Monad, G[_]](bookingsDB: Store[F, G], generatedRooms:
     } yield booking
   }
 
+  //TODO
+  // I need to upgrade cats effect and scala!
 }

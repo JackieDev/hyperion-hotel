@@ -1,8 +1,13 @@
 package com.hyperion.hotel.models
 
+import cats.implicits._
 import java.time.{LocalDate, Year, ZoneId, ZonedDateTime}
 import java.time.Month.{DECEMBER, FEBRUARY, JULY, MAY}
 import java.time.DayOfWeek.MONDAY
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
+import vulcan.Codec
+import vulcan.Codec._
 
 case class SpecialDeal(id: String,
                        description: String,
@@ -12,7 +17,27 @@ case class SpecialDeal(id: String,
                        availableTo: ZonedDateTime)
 
 object SpecialDeal {
-  // we don't care about the number of people when calculating the price, we don't rip people off here unnecessarily
+
+  implicit val decode: Decoder[SpecialDeal] = deriveDecoder[SpecialDeal]
+  implicit val encode: Encoder[SpecialDeal] = deriveEncoder[SpecialDeal]
+
+  implicit val zonedDateTimeCodec: Codec[ZonedDateTime] =
+    Codec.instant.imap(zdt => ZonedDateTime.ofInstant(zdt, ZoneId.of("Z")))(_.toInstant)
+
+  implicit val codec: Codec[SpecialDeal] =
+    Codec.record("SpecialDeal", "special-deal", None){ f =>
+      (
+        f("id", _.id),
+        f("description", _.description),
+        f("totalNights", _.totalNights),
+        f("discountPercentageOff", _.discountPercentageOff),
+        f("availableFrom", _.availableFrom),
+        f("availableTo", _.availableTo)
+        ).mapN(SpecialDeal(_,_,_,_,_,_))
+    }
+
+
+  // we don't care about the number of people when calculating the price
 
   // SpecialDeals for:
   // Valentines - 2People, 2Nights, 20% off, 14th-16th
@@ -78,6 +103,12 @@ object SpecialDeal {
     currentDeals.find(_.id == specialDealId) match {
       case Some(special) => special.discountPercentageOff
       case None => 0
+    }
+
+  def getSpecialDeal(specialDealId: String): Option[SpecialDeal] =
+    currentDeals.find(_.id == specialDealId) match {
+      case Some(special) => Some(special)
+      case None => None
     }
 
 }
