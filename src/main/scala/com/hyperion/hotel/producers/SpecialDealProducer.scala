@@ -33,43 +33,8 @@ object SpecialDealProducer {
         valueSerializer = serializer
       ).withBootstrapServers("localhost:9092")
 
-    //  val consumerSettings =
-    //    ConsumerSettings[F, String, SpecialDeal]
-    //      .withAutoOffsetReset(AutoOffsetReset.Earliest)
-    //      .withBootstrapServers("localhost:9092")
-    //      .withGroupId("hyperion-hotel")
-
-
-
-    //  val stream =
-    //    KafkaConsumer
-    //      .stream(consumerSettings)
-    //      .subscribeTo(topic)
-    //      .records
-    //      .mapAsync(25) { committable =>
-    //        processRecord(committable.record).map { case (key, value) =>
-    //          val record = ProducerRecord("topic", key, value)
-    //          committable.offset -> ProducerRecords.one(record)
-    //        }
-    //      }
-    //      .through { offsetsAndProducerRecords =>
-    //        KafkaProducer
-    //          .stream(producerSettings)
-    //          .flatMap { producer =>
-    //            offsetsAndProducerRecords
-    //              .evalMap { case (offset, producerRecord) =>
-    //                producer.produce(producerRecord).map(_.as(offset))
-    //              }
-    //              .parEvalMap(Int.MaxValue)(identity)
-    //          }
-    //      }
-    //      .through(commitBatchWithin(50, 10.seconds))
-
-
     KafkaProducer
       .stream(producerSettings)
-      //.compile.drain
-
   }
 
 }

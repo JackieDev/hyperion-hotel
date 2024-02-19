@@ -1,7 +1,6 @@
 package com.hyperion.hotel.routing
 
 import cats.{Applicative, Defer}
-import cats.effect._
 import cats.implicits._
 import com.hyperion.hotel.handlers.SpecialDealHandler
 import com.hyperion.hotel.models.SpecialDeal
@@ -16,19 +15,14 @@ class AdminRoutes[F[_]: Applicative: Defer](specialDealHandler: SpecialDealHandl
       .of[F] {
 
         case (GET | HEAD) -> Root / "admin" / "publish-deal" / specialId =>
-          // get deal details
           SpecialDeal.getSpecialDeal(specialId) match {
             case Some(deal) =>
               specialDealHandler.publish(specialId, deal) *>
                 Ok(s"Special deal with id $specialId was published to the kafka topic")
             case None =>
-              Ok(s"There were no special deals with id $specialId to publish")
+              Ok(s"There were no special deals with id $specialId available to publish")
           }
-        // TODO
-        // send to fake-booking.com
-        // which has a kafka consumer
       }
-
   }
 
 }

@@ -3,7 +3,7 @@
 ![hotel](hyperion.jpg)
 
 This microservice is the backend of a hotel reservation application created 
-using Scala, Cats, Circe, Doobie, Postgres and Http4s.
+using Scala, Cats, Circe, Doobie, Kafka, Postgres and Http4s.
 
 ### Endpoints
 GET /bookings/roomId
@@ -52,7 +52,7 @@ POST /available-rooms (supply dates in the body)
 }
 ```
 
-POST /special-deal-booking / specialId (supply booking details in the body)
+POST /special-deal-booking/specialId (supply booking details in the body)
 ```
 {
     "roomId":"411",
@@ -69,3 +69,5 @@ MAYBH - for May Bank Holiday offer
 JJ - for Jolly July offer
 DEC - for all of December offer
 ```
+
+GET /admin/publish-deal/specialId (to publish to special-stays website)
