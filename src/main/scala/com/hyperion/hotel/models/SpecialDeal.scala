@@ -11,6 +11,8 @@ import vulcan.Codec._
 
 case class SpecialDeal(id: String,
                        description: String,
+                       hotelName: String = "Hyperion Hotel",
+                       cityOfLocation: String = "Los Angeles",
                        totalNights: Option[Int], // only use if deal is for fixed number of nights such as Valentines and MayBankHoilday
                        discountPercentageOff: Double,
                        availableFrom: ZonedDateTime,
@@ -29,11 +31,13 @@ object SpecialDeal {
       (
         f("id", _.id),
         f("description", _.description),
+        f("hotelName", _.hotelName),
+        f("cityOfLocation", _.cityOfLocation),
         f("totalNights", _.totalNights),
         f("discountPercentageOff", _.discountPercentageOff),
         f("availableFrom", _.availableFrom),
         f("availableTo", _.availableTo)
-        ).mapN(SpecialDeal(_,_,_,_,_,_))
+        ).mapN(SpecialDeal(_,_,_,_,_,_,_,_))
     }
 
 
@@ -45,25 +49,41 @@ object SpecialDeal {
   // JollyJuly - The whole month, 10% off for all bookings under this deal
   // December - The whole month 15% off all bookings under this deal, 5 nights max per booking
 
-  val valentinesDeal = SpecialDeal("VALENTINES", "2 Nights only, 14th-16th Feb, 20% off total booking", Some(2), 0.2,
-    ZonedDateTime.of(2024, 2, 14, 15, 0, 0, 0, ZoneId.of("Z")),
-    ZonedDateTime.of(2024, 2, 16, 11, 0, 0, 0, ZoneId.of("Z")),
+  val valentinesDeal = SpecialDeal(
+    id = "VALENTINES",
+    description = "2 Nights only, 14th-16th Feb, 20% off total booking",
+    totalNights = Some(2),
+    discountPercentageOff = 0.2,
+    availableFrom = ZonedDateTime.of(2024, 2, 14, 15, 0, 0, 0, ZoneId.of("Z")),
+    availableTo = ZonedDateTime.of(2024, 2, 16, 11, 0, 0, 0, ZoneId.of("Z")),
   )
 
   // need to figure out the first Mon of May each year, then work backwards to get dates for Fri, Sat and Sun
-  val mayBankHoliday = SpecialDeal("MAYBH", "3 Nights only, first May BH Fri, Sat, Sun nights only, 20% off total booking", Some(3), 0.2,
-    ZonedDateTime.of(2024, 5, 1, 15, 0, 0, 0, ZoneId.of("Z")),
-    ZonedDateTime.of(2024, 5, 7, 11, 0, 0, 0, ZoneId.of("Z")),
+  val mayBankHoliday = SpecialDeal(
+    id = "MAYBH",
+    description = "3 Nights only, first May BH Fri, Sat, Sun nights only, 20% off total booking",
+    totalNights = Some(3),
+    discountPercentageOff = 0.2,
+    availableFrom = ZonedDateTime.of(2024, 5, 1, 15, 0, 0, 0, ZoneId.of("Z")),
+    availableTo = ZonedDateTime.of(2024, 5, 7, 11, 0, 0, 0, ZoneId.of("Z")),
   )
 
-  val jollyJuly = SpecialDeal("JJ", "10% off total booking for all of July", None, 0.1,
-    ZonedDateTime.of(2024, 7, 1, 15, 0, 0, 0, ZoneId.of("Z")),
-    ZonedDateTime.of(2024, 7, 31, 11, 0, 0, 0, ZoneId.of("Z")),
+  val jollyJuly = SpecialDeal(
+    id = "JJ",
+    description = "10% off total booking for all of July",
+    totalNights = None,
+    discountPercentageOff = 0.1,
+    availableFrom = ZonedDateTime.of(2024, 7, 1, 15, 0, 0, 0, ZoneId.of("Z")),
+    availableTo = ZonedDateTime.of(2024, 7, 31, 11, 0, 0, 0, ZoneId.of("Z")),
   )
 
-  val decemberDeal = SpecialDeal("DEC", "15% off total bookings for all of December, 5 nights max per booking", None, 0.15,
-    ZonedDateTime.of(2024, 12, 1, 15, 0, 0, 0, ZoneId.of("Z")),
-    ZonedDateTime.of(2024, 12, 31, 11, 0, 0, 0, ZoneId.of("Z")),
+  val decemberDeal = SpecialDeal(
+    id = "DEC",
+    description = "15% off total bookings for all of December, 5 nights max per booking",
+    totalNights = None,
+    discountPercentageOff = 0.15,
+    availableFrom = ZonedDateTime.of(2024, 12, 1, 15, 0, 0, 0, ZoneId.of("Z")),
+    availableTo = ZonedDateTime.of(2024, 12, 31, 11, 0, 0, 0, ZoneId.of("Z")),
   )
 
   val currentDeals = List(valentinesDeal, mayBankHoliday, jollyJuly, decemberDeal)
