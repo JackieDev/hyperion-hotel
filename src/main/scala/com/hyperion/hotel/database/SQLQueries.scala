@@ -44,6 +44,31 @@ object SQLQueries {
 
   // calculate overlapping date ranges
   // startDate1 < endDate2 && startDate2 < endDate1
+  /*
+    An example - non overlapping
+    startDate1 = 1 AUG 2024
+    endDate1 = 6 AUG 2024
+
+    startDate2 = 1 JUL 2024
+    endDate2 = 8 JUL 2024
+
+    Is startDate1 < endDate2? No it's not
+    Is startDate2 < endDate1? Yes
+
+    answer is false as we need both to be true to have overlapping dates
+
+    Another example - overlapping
+    startDate1 = 1 AUG 2024
+    endDate1 = 6 AUG 2024
+
+    startDate2 = 4 AUG 2024
+    endDate2 = 8 AUG 2024
+
+    Is startDate1 < endDate2? Yes
+    Is startDate2 < endDate1? Yes
+
+    answer is true, this booking attempt should be rejected as room is already taken
+   */
   def getAllBookingsForDates(startDate: ZonedDateTime,
                              endDate: ZonedDateTime): ConnectionIO[List[Int]] =
     sql"""
