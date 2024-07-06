@@ -5,7 +5,7 @@ import cats.effect._
 import cats.syntax.all._
 import com.hyperion.hotel.config.ServiceConfig
 import com.hyperion.hotel.database.{PostgresStore, SchemaMigration, Store}
-import com.hyperion.hotel.handlers.{BookingHandler, SpecialDealHandler}
+import com.hyperion.hotel.handlers.{AvailabilityHandler, BookingHandler, SpecialDealHandler}
 import com.hyperion.hotel.models.{Hotel, Room, SpecialDeal, Suite}
 import com.hyperion.hotel.producers.SpecialDealProducer
 import com.hyperion.hotel.routing.{AdminRoutes, Routes}
@@ -97,7 +97,9 @@ object Main extends IOApp {
       specialsHandler = new SpecialDealHandler[IO](publishKafkaMessage)
       adminRoutes = new AdminRoutes[IO](specialsHandler)
 
-      httpService = new Routes[IO, ConnectionIO](db, bookingHandler).routes
+      availabilityHandler = new AvailabilityHandler[IO, ConnectionIO](db, generatedRooms)
+
+      httpService = new Routes[IO, ConnectionIO](db, bookingHandler, availabilityHandler).routes
         .combineK(adminRoutes.routes)
 
       server <- runServer(httpService, config.hyperionHotel.httpd.host, config.hyperionHotel.httpd.port, appExecutionContext)

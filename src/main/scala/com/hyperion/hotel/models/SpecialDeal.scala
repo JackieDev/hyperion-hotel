@@ -119,6 +119,33 @@ object SpecialDeal {
     }
   }
 
+  def specialBookingValidator(specialDealId: String,
+                              startDate: ZonedDateTime,
+                              endDate: ZonedDateTime): Boolean = {
+    specialDealId match {
+      case "VALENTINES" => startDate.toLocalDate.getDayOfMonth == 14 &
+        startDate.toLocalDate.getMonth == FEBRUARY &
+        endDate.toLocalDate.getDayOfMonth == 16 &
+        endDate.toLocalDate.getMonth == FEBRUARY
+
+      case "MAYBH" =>
+        val firstMonday = getFirstMondayInMay(Year.of(startDate.toLocalDate.getYear))
+
+        startDate.toLocalDate.plusDays(3) == firstMonday & // MON minus 3 days will be FRI
+          endDate.toLocalDate == firstMonday // MON will be the end of the stay
+
+      case "JJ" =>
+        startDate.toLocalDate.getMonth == JULY &
+          endDate.toLocalDate.getMonth == JULY
+
+      case "DEC" =>
+        startDate.toLocalDate.getMonth == DECEMBER &
+          endDate.toLocalDate.getMonth == DECEMBER &
+          (endDate.toLocalDate.getDayOfMonth -
+            startDate.toLocalDate.getDayOfMonth) <= 5
+    }
+  }
+
   def getDiscountRate(specialDealId: String): Double =
     currentDeals.find(_.id == specialDealId) match {
       case Some(special) => special.discountPercentageOff

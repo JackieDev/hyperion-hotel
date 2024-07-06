@@ -3,15 +3,17 @@ package com.hyperion.hotel.routing
 import cats.effect._
 import cats.implicits._
 import com.hyperion.hotel.database.Store
-import com.hyperion.hotel.handlers.BookingHandler
+import com.hyperion.hotel.handlers.{AvailabilityHandler, BookingHandler}
 import com.hyperion.hotel.models._
 import com.typesafe.scalalogging.Logger
 import org.http4s.circe._
-import org.http4s.{EntityDecoder, HttpRoutes, InvalidMessageBodyFailure}
+import org.http4s.{EntityDecoder, EntityEncoder, HttpRoutes, InvalidMessageBodyFailure}
 import org.http4s.dsl.Http4sDsl
 
 class Routes[F[_]: Sync, G[_]](store: Store[F, G],
-                               bookingsHandler: BookingHandler[F, G]) extends Http4sDsl[F] {
+                               bookingsHandler: BookingHandler[F, G],
+                               availabilityHandler: AvailabilityHandler[F, G]
+                              ) extends Http4sDsl[F] {
 
   val logger = Logger(getClass)
 
@@ -20,6 +22,8 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
     implicit def decodeBooking: EntityDecoder[F, BookingReceived] = jsonOf[F, BookingReceived]
     implicit def decodeBookingForRoomType: EntityDecoder[F, BookingForRoomType] = jsonOf[F, BookingForRoomType]
     implicit def decodeDates: EntityDecoder[F, JustDates] = jsonOf[F, JustDates]
+    implicit def decodeSpecialDealBooking: EntityDecoder[F, SpecialDealBooking] = jsonOf[F, SpecialDealBooking]
+    implicit val encodeAvailableRooms: EntityEncoder[F, Option[AvailableRooms]] = jsonEncoderOf[F, Option[AvailableRooms]]
 
     HttpRoutes
       .of[F] {
@@ -110,6 +114,14 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
             for {
               rooms <- bookingsHandler.getAllAvailableRooms(dates.startDate, dates.endDate)
               res <- Ok(s"The following rooms are available from ${dates.startDate} to ${dates.endDate}: $rooms")
+            } yield res
+          }
+
+        case req @ POST -> Root / "check-special-availability" =>
+          req.as[SpecialDealBooking].flatMap { sdBooking =>
+            for {
+              rooms <- availabilityHandler.calculateAvailableRooms(sdBooking.specialDealId, sdBooking.startDate, sdBooking.endDate)
+              res <- Ok(rooms)
             } yield res
           }
 

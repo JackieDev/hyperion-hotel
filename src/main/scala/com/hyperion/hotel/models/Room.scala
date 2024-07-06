@@ -3,6 +3,7 @@ package com.hyperion.hotel.models
 sealed trait RoomType {
   def name: String
   def pricePerNight: Double
+  def discountedPricePerNight(discount: Double): Double = (1 - discount) * pricePerNight
 }
 
 case object Standard extends RoomType {
