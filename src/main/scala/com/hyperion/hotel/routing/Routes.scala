@@ -24,6 +24,7 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
     implicit def decodeDates: EntityDecoder[F, JustDates] = jsonOf[F, JustDates]
     implicit def decodeSpecialDealBooking: EntityDecoder[F, SpecialDealBooking] = jsonOf[F, SpecialDealBooking]
     implicit val encodeAvailableRooms: EntityEncoder[F, Option[AvailableRooms]] = jsonEncoderOf[F, Option[AvailableRooms]]
+    implicit def decodeCheckAvailability: EntityDecoder[F, CheckAvailability] = jsonOf[F, CheckAvailability]
 
     HttpRoutes
       .of[F] {
@@ -117,10 +118,19 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
             } yield res
           }
 
+        case GET -> Root / "check" =>
+          println("---------------- The check endpoint has been hit ---------------")
+          Ok(s"You've hit our check endpoint")
+
+        case GET -> Root / "check" / specialId =>
+          Ok(s"You've hit us with specialId: $specialId")
+
         case req @ POST -> Root / "check-special-availability" =>
-          req.as[SpecialDealBooking].flatMap { sdBooking =>
+          println("------------------ check-special-availability was hit")
+          req.as[CheckAvailability].flatMap { sdEnquiry =>
+            println(s"--------------- check-special-availability was hit with $sdEnquiry")
             for {
-              rooms <- availabilityHandler.calculateAvailableRooms(sdBooking.specialDealId, sdBooking.startDate, sdBooking.endDate)
+              rooms <- availabilityHandler.calculateAvailableRooms(sdEnquiry.specialId, sdEnquiry.startDate, sdEnquiry.endDate)
               res <- Ok(rooms)
             } yield res
           }

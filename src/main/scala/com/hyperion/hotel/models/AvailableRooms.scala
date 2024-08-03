@@ -31,6 +31,7 @@ object AvailableRooms {
       .map(kv => AvailableRoom(kv._1.name, kv._2.size, Some(kv._1.discountedPricePerNight(discountRate))))
       .toSet
 
+    println(s"======== availableRooms: $availableRooms")
     AvailableRooms(availableRooms)
   }
 }
