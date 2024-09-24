@@ -118,17 +118,9 @@ class Routes[F[_]: Sync, G[_]](store: Store[F, G],
             } yield res
           }
 
-        case GET -> Root / "check" =>
-          println("---------------- The check endpoint has been hit ---------------")
-          Ok(s"You've hit our check endpoint")
-
-        case GET -> Root / "check" / specialId =>
-          Ok(s"You've hit us with specialId: $specialId")
 
         case req @ POST -> Root / "check-special-availability" =>
-          println("------------------ check-special-availability was hit")
           req.as[CheckAvailability].flatMap { sdEnquiry =>
-            println(s"--------------- check-special-availability was hit with $sdEnquiry")
             for {
               rooms <- availabilityHandler.calculateAvailableRooms(sdEnquiry.specialId, sdEnquiry.startDate, sdEnquiry.endDate)
               res <- Ok(rooms)

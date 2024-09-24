@@ -1,8 +1,9 @@
 package com.hyperion.hotel.models
 
 import cats.implicits._
+
 import java.time.{LocalDate, Year, ZoneId, ZonedDateTime}
-import java.time.Month.{DECEMBER, FEBRUARY, JULY, MAY}
+import java.time.Month.{AUGUST, DECEMBER, FEBRUARY, JULY, MAY, OCTOBER, NOVEMBER}
 import java.time.DayOfWeek.MONDAY
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
@@ -80,13 +81,32 @@ object SpecialDeal {
   val decemberDeal = SpecialDeal(
     id = "DEC",
     description = "15% off total bookings for all of December, 5 nights max per booking",
+    cityOfLocation = "London",
     totalNights = None,
     discountPercentageOff = 0.15,
     availableFrom = ZonedDateTime.of(2024, 12, 1, 15, 0, 0, 0, ZoneId.of("Z")),
     availableTo = ZonedDateTime.of(2024, 12, 31, 11, 0, 0, 0, ZoneId.of("Z")),
   )
 
-  val currentDeals = List(valentinesDeal, mayBankHoliday, jollyJuly, decemberDeal)
+  val augustDeal = SpecialDeal(
+    id = "AUG",
+    description = "10% off for all of December",
+    totalNights = None,
+    discountPercentageOff = 0.1,
+    availableFrom = ZonedDateTime.of(2024, 8, 1, 15, 0, 0, 0, ZoneId.of("Z")),
+    availableTo = ZonedDateTime.of(2024, 8, 31, 11, 0, 0, 0, ZoneId.of("Z")),
+  )
+
+  val halloweenDeal = SpecialDeal(
+    id = "WEEN",
+    description = "Happy Halloween",
+    totalNights = None,
+    discountPercentageOff = 0.1,
+    availableFrom = ZonedDateTime.of(2024, 10, 24, 15, 0, 0, 0, ZoneId.of("Z")),
+    availableTo = ZonedDateTime.of(2024, 11, 1, 11, 0, 0, 0, ZoneId.of("Z")),
+  )
+
+  val currentDeals = List(valentinesDeal, mayBankHoliday, jollyJuly, decemberDeal, augustDeal, halloweenDeal)
 
   def getFirstMondayInMay(year: Year): LocalDate = {
     (1 to 7).map { d =>
@@ -116,6 +136,15 @@ object SpecialDeal {
         booking.endDate.toLocalDate.getMonth == DECEMBER &
           (booking.endDate.toLocalDate.getDayOfMonth -
         booking.startDate.toLocalDate.getDayOfMonth) <= 5
+
+      case "AUG" =>
+        booking.startDate.toLocalDate.getMonth == AUGUST &
+          booking.endDate.toLocalDate.getMonth == AUGUST
+
+      case "WEEN" =>
+        booking.startDate.toLocalDate.getMonth == OCTOBER &
+        booking.endDate.toLocalDate.getMonth == OCTOBER |
+        booking.endDate.toLocalDate.getMonth == NOVEMBER
     }
   }
 
@@ -143,6 +172,15 @@ object SpecialDeal {
           endDate.toLocalDate.getMonth == DECEMBER &
           (endDate.toLocalDate.getDayOfMonth -
             startDate.toLocalDate.getDayOfMonth) <= 5
+
+      case "AUG" =>
+        startDate.toLocalDate.getMonth == AUGUST &
+          endDate.toLocalDate.getMonth == AUGUST
+
+      case "WEEN" =>
+        startDate.toLocalDate.getMonth == OCTOBER &
+          endDate.toLocalDate.getMonth == OCTOBER |
+          endDate.toLocalDate.getMonth == NOVEMBER
     }
   }
 
@@ -159,10 +197,3 @@ object SpecialDeal {
     }
 
 }
-
-// What's next to think about?
-/**
- * TODO
- * Will these deals be in their own db table? - maybe in future
- * The deals themselves and the SpecialBookings made by customers?
- */

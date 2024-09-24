@@ -15,8 +15,9 @@ object SpecialDealProducer {
   def sendMessage(key: String,
                   message: SpecialDeal,
                   producer: KafkaProducer[IO, String, SpecialDeal]
-                 ): IO[Unit] =
+                 ): IO[Unit] = {
     producer.produce(ProducerRecords.one(ProducerRecord(topic, key, message))).flatten.void
+  }
 
   def apply[F[_]: ConcurrentEffect: ContextShift](): fs2.Stream[F, KafkaProducer[F, String, SpecialDeal]] = {
 

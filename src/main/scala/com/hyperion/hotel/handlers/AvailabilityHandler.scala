@@ -18,14 +18,15 @@ class AvailabilityHandler[F[_]: Applicative, G[_]](bookingsDB: Store[F, G],
                              ): F[Option[AvailableRooms]] = {
 
     if (SpecialDeal.specialBookingValidator(specialId, startDate, endDate)) {
-      println(s"-------------- special booking passed validation")
       for {
         takenRoomIds <- bookingsDB.getAllBookingsForDates(startDate, endDate)
-        roomsAvailable = generatedRooms.filter(generatedRoomId => !takenRoomIds.contains(generatedRoomId.id))
+        roomsAvailable = if (takenRoomIds.isEmpty) {
+            generatedRooms
+        } else
+            generatedRooms.filter(generatedRoomId => !takenRoomIds.contains(generatedRoomId.id))
       } yield Some(AvailableRooms.convertToAvailableRooms(roomsAvailable, SpecialDeal.getDiscountRate(specialId)))
 
     } else
-      println(s"-------------- special booking didn't pass validation")
       none[AvailableRooms].pure[F]
   }
 
